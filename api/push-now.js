@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    return res.status(200).json({ hasToken: false, error: 'No GITHUB_TOKEN env var on Vercel', envKeys: Object.keys(process.env).filter(k => k.includes('GITHUB') || k.includes('TOKEN') || k.includes('SUPABASE')).sort() });
+    return res.status(200).json({ hasToken: false, error: 'No GITHUB_TOKEN env var' });
   }
 
   const owner = 'Faisalcoder124';
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     for (const e of entries) {
       const full = pathMod.join(dir, e.name);
       const rel = pathMod.relative(root, full).replace(/\\/g,'/');
-      if (rel.startsWith('public/liddawi') || rel.startsWith('public/Liddawi') || rel.startsWith('public/uploads')) continue;
+      if (rel.startsWith('public/liddawi') || rel.startsWith('public/Liddawi')) continue;
       if (['.env','.env.local'].includes(e.name)) continue;
       if (rel.endsWith('.zip') || rel.endsWith('.tar.gz')) continue;
       if (excludeDirs.has(e.name)) continue;
@@ -32,7 +32,8 @@ export default async function handler(req, res) {
       if (parts.some(p=>excludeDirs.has(p))) continue;
       if (e.isDirectory()) walk(full, list);
       else {
-        if (parts[0]==='src' || parts[0]==='api' || parts[0]==='public' || ['package.json','package-lock.json','.gitignore','README.md','.env.example','index.html','vite.config.ts','vercel.json','tsconfig.json','tsconfig.app.json','tsconfig.node.json','eslint.config.js'].includes(rel)) {
+        const allowedRoots = ['.gitignore','package.json','package-lock.json','README.md','.env.example','index.html','vite.config.ts','vercel.json','tsconfig.json','tsconfig.app.json','tsconfig.node.json','eslint.config.js'];
+        if (parts[0]==='src' || parts[0]==='api' || parts[0]==='public' || parts[0]==='scripts' || allowedRoots.includes(rel)) {
           try { const st = fs.statSync(full); if (st.size > 800*1024) continue; list.push(rel); } catch {}
         }
       }
@@ -59,7 +60,7 @@ export default async function handler(req, res) {
       if (!putRes.ok) results.push({ file: fp, ok: false, error: pj.message || JSON.stringify(pj).slice(0,300) });
       else results.push({ file: fp, ok: true, commit: pj.commit?.sha?.slice(0,7) });
     } catch (e) { results.push({ file: fp, ok: false, error: e.message }); }
-    await new Promise(r=>setTimeout(r,250));
+    await new Promise(r=>setTimeout(r,260));
   }
 
   return res.status(200).json({ hasToken: true, ownerRepo: `${owner}/${repo}`, synced: results.filter(r=>r.ok).length, total: results.length, results });
